@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "angular": "^1.5.1",
+    "extend": "^3.0.0",
     "streamify": "^0.2.5"
   }
 }
