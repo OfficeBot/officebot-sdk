@@ -1,0 +1,38 @@
+{
+  "name": "officebot-sdk",
+  "version": "1.0.0",
+  "description": "A common interface for all of Office Bot's public APIs",
+  "main": "index.js",
+  "scripts": {
+    "test": "karma start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OfficeBot/officebot-sdk.git"
+  },
+  "keywords": [
+    "OfficeBot",
+    "Office",
+    "Bot",
+    "Honeydew"
+  ],
+  "author": "Scott Peterson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/OfficeBot/officebot-sdk/issues"
+  },
+  "homepage": "https://github.com/OfficeBot/officebot-sdk#readme",
+  "devDependencies": {
+    "browserify": "^13.0.0",
+    "gulp": "^3.9.1",
+    "gulp-minify": "0.0.5",
+    "gulp-streamify": "^1.0.2",
+    "gulp-util": "^3.0.7",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.7.0"
+  },
+  "dependencies": {
+    "angular": "^1.5.1",
+    "streamify": "^0.2.5"
+  }
+}
