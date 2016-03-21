@@ -26,7 +26,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
 
     We then have the ability to pass in default data
   */
-  var self = function(data) {
+  var self = function(data, onReady) {
+    this.readyState = 0;
+
     if (data) {
     	extend(true, this, data);
     }
@@ -39,6 +41,22 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
     if (endpointConfig.model) {
       angular.extend(this, endpointConfig.model);
     }
+
+    var rootUrl = baseRoute + endpointConfig.route;
+    var _this = this;
+    transport.put(rootUrl, data)
+      .then(function(response) {
+        _this.readyState = 2;
+        extend(true, _this, response.data);
+        if ('function' === typeof onReady) {
+          return onReady(null, _this);
+        }
+      }, function(err) {
+        _this.readyState = 1;
+        if ('function' === typeof onReady) {
+          return onReady(err);
+        }
+      });
 
     return this;
   };

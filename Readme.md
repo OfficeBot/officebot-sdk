@@ -138,6 +138,16 @@ Asks the API to limit the number of records returns. API support may vary.
 
 Models give our returned data a logical wrapper so we aren't working with raw JSON data.
 
+## Instantiation
+
+Creating a new model can be as easy as calling the `new` keyword, but if you're wanting to wait for defaults back from the server before you proceed, pass a callback function as your second parameter to your instantiation method (the first parameter being any initial values you would like to persist).
+
+```
+var someModel = new ModelName(defaults, function onReady(err) {
+	//By this point, someModel will have defaults from the server but this instance WON'T persist until .save is called
+});
+```
+
 ## .save(callback)
 
 This is used when we are creating a new object that is to be saved on the given endpoint. Here's an example:
