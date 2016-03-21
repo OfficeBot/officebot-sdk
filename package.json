@@ -1,6 +1,6 @@
 {
   "name": "officebot-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A common interface for all of Office Bot's public APIs",
   "main": "index.js",
   "scripts": {
