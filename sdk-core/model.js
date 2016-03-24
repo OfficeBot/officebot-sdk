@@ -10,7 +10,7 @@ var angular = require('angular');
 	* @requires extend
 	* @requires angular
 	*/ 
-module.exports = function InstantiateModel(data, transport, baseRoute, endpointConfig) {
+module.exports = function InstantiateModel(data, transport, baseRoute, endpointConfig, modelCache) {
 	'use strict';
 	'ngInject';
 
@@ -37,12 +37,23 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	  var model = this;
 
 		var tmp = JSON.parse( angular.toJson(model) );
+		var method = 'put';
+		var href = tmp.href;
+
+		if (tmp._temporary === true) {
+			method = 'POST';
+			delete tmp.href;
+		}
+
+
 
 	  transport
-	  	.put( model.href, tmp )
+		  .request(href, method, tmp, {}, {})
+	  	// .put( model.href, tmp )
 	    .then(function(response) {
 	      if (response && response.data) {
 	      	extend(true, model, response.data);
+	      	modelCache.invalidate( tmp._id );
 	      }
 	      return callback(null, response.data);
 	    }, function(err) {

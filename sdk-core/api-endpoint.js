@@ -15,7 +15,7 @@ var utils = require('./utils.js');
   * @requires angular
   * @requires extend
   */
-module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
+module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cache, $timeout) {
   'use strict';
   'ngInject';
 
@@ -27,10 +27,8 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
     We then have the ability to pass in default data
   */
   var self = function(data, onReady) {
-    this.readyState = 0;
-
     if (data) {
-    	extend(true, this, data);
+      extend(true, this, data);
     }
     
     /*
@@ -46,13 +44,20 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
     var _this = this;
     transport.put(rootUrl, data)
       .then(function(response) {
-        _this.readyState = 2;
+
+        // var cachedModel = _instantiate(response.data);
+        response.data._temporary = true;
+        //Our API only creates an HREF after the first save, so we need to fake one
+        response.data.href = rootUrl;
+
         extend(true, _this, response.data);
+
+        cache.put(response.data);
+
         if ('function' === typeof onReady) {
           return onReady(null, _this);
         }
       }, function(err) {
-        _this.readyState = 1;
         if ('function' === typeof onReady) {
           return onReady(err);
         }
@@ -142,7 +147,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
     var method = 'POST'; //if new
     var targetUrl = self.baseUrl;
     if (_this.hasOwnProperty('href')) {
-      method = 'PUT';
+      if (_this._temporary !== true) {
+        method = 'PUT';
+      }
       targetUrl = _this.href;
     }
 
@@ -153,6 +160,8 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
         var data = response.data;
 
         extend(true, _this, data);
+
+        cache.invalidate(data._id);
 
         //Signature is: error, *this* instance, full response body (mostly for debugging/sanity check)
         return cb(null, _this, response);
@@ -246,11 +255,29 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
       cb = callback;
     }
 
-    if ('function' === typeof cb) {
+    // Here, we need to see if this object is already in the cache. If so,
+    // fetch it and override our callback stack
+
+    var cachedModel = cache.get(id, _instantiate);
+    if (cachedModel) {
+      if ('function' === typeof cb) {
+        return cb(null, cachedModel)
+      } else {
+        return {
+          exec : function(callback) {
+            return $timeout(function() {
+              return callback(null, cachedModel);
+            },10);
+          }
+        }
+      }
+
+    } else if ('function' === typeof cb) {
       return self.exec(cb);
+    } else {
+      return self;
     }
 
-    return self;
   }
 
   /**
@@ -324,10 +351,12 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
         if (data) {
           if (data.hasOwnProperty('length')) {
             model = data.map(function(item) {
-              return instantiateModel(item, transport, baseRoute, endpointConfig);
+              // return instantiateModel(item, transport, baseRoute, endpointConfig);
+              return _instantiate(item);
             });
           } else {
-            model = instantiateModel(data, transport, baseRoute, endpointConfig);
+            model = _instantiate(data);
+            // model = instantiateModel(data, transport, baseRoute, endpointConfig);
           }
           data = model;
         }
@@ -336,5 +365,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport) {
         err = err || {};
         return cb(err);
       });
+  }
+
+  function _instantiate(item) {
+    return instantiateModel(item, transport, baseRoute, endpointConfig, cache);
   }
 };
