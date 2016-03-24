@@ -53,6 +53,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	    .then(function(response) {
 	      if (response && response.data) {
 	      	extend(true, model, response.data);
+	      	model._temporary = false;
 	      	modelCache.invalidate( tmp._id );
 	      }
 	      return callback(null, response.data);
