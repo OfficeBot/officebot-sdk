@@ -22,6 +22,9 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		*/
 	var Model = function(data) {
 		extend(true, this, data);
+		if (endpointConfig.model) {
+			extend(true, this, endpointConfig.model);
+		}
 		return this;
 	};
 
