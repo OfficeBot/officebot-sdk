@@ -30,7 +30,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     if (data) {
       extend(true, this, data);
     }
-    
+
     /*
       If we've passed in a custom model object, let's extend our default model
       with this custom model. This gives us new methods that newly created models for
@@ -65,9 +65,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
 
     return this;
   };
-  
-  /* 
-    Defaults for our request, in case config objects aren't passed in 
+
+  /*
+    Defaults for our request, in case config objects aren't passed in
   */
   self.req = {
     method : 'get',
@@ -77,32 +77,31 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     data : {}
   };
 
-  /* 
-    Bring in the configurations that were passed in on baseRoute and endpointConfig 
+  /*
+    Bring in the configurations that were passed in on baseRoute and endpointConfig
   */
   self.config = endpointConfig;
   self.baseUrl = baseRoute + self.config.route;
 
-  /* 
-    Instead of inlining our functions, use hoisting to make things nice and clean 
+  /*
+    Instead of inlining our functions, use hoisting to make things nice and clean
   */
   self.exec = exec;
   self.find = find;
-  self.populate = populate;
   self.skip = skip;
   self.limit = limit;
   self.findById = findById;
   self.findByIdAndRemove = findByIdAndRemove;
   self.findByIdAndUpdate = findByIdAndRemove;
 
-  /* 
-    Save is bound to the prototype so we can use it when creating a new instance 
+  /*
+    Save is bound to the prototype so we can use it when creating a new instance
   */
   self.prototype.save = save;
 
-  /* 
+  /*
     If the endpointConfig has a custom methods object, extend our current methods list
-    with the methods that we've passed in. This hasn't been tested very extensively 
+    with the methods that we've passed in. This hasn't been tested very extensively
   */
   if (endpointConfig.methods) {
     endpointConfig.methods._parent = self;
@@ -171,19 +170,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   }
 
   /**
-    * @desc Appends a special parameter to the query to tell the server to populate any references
-    * in the model.
-    * @deprecated
-    * @memberof OfficeBotSDK.ApiEndpoint
-    * @param {object} fields
-    * @returns {object}
-    */
-  function populate(fields) {
-    self.req.query._populate = fields;
-    return self;
-  }
-
-  /**
     * @desc Sends a query to the api. If a function is passed as the last
     * parameter, this method will execute the query and return the results
     * using that callback function. Otherwise, `this` gets returned for
@@ -204,9 +190,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     } else {
       req.config = {};
     }
-    
+
     var cb;
-    
+
     if ('function' === typeof config) {
       cb = config;
     }
@@ -242,9 +228,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     if ('object' === typeof config) {
       req.config = config;
     }
-    
+
     var cb;
-    
+
     if ('function' === typeof config) {
       cb = config;
     } else {
@@ -281,7 +267,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   }
 
   /**
-    * @desc Finds an element on the API and removes it using a unique ID. If a 
+    * @desc Finds an element on the API and removes it using a unique ID. If a
     * function is passed as the last parameter, this method will execute
     * the query and return the results using that callback function.
     * Otherwise, `this` gets returned for
@@ -295,7 +281,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     var req = self.req;
     req.method = 'delete';
     req.url = self.baseUrl + '/' + id;
-    
+
     if ('function' === typeof callback) {
       return self.exec(callback);
     }
@@ -320,7 +306,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     req.method = 'put';
     req.data = data;
     req.url = self.baseUrl + '/' + id;
-    
+
     if ('function' === typeof callback) {
       return self.exec(callback);
     }
