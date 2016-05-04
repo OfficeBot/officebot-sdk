@@ -89,6 +89,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   self.exec = exec;
   self.find = find;
   self.skip = skip;
+  self.fields = fields;
   self.limit = limit;
   self.findById = findById;
   self.findByIdAndRemove = findByIdAndRemove;
@@ -117,10 +118,26 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     * @returns {object} self
     */
   function limit(amount) {
-    self.req.query._limit = amount;
+    self.req.query.limit = amount;
     return self;
   }
 
+  /**
+   * @desc This function will allow us to select specific fields that we want back from the db
+   * @memberof OfficeBotSDK.ApiEndpoint
+   * @param {string|array} fieldNames
+   * @returns {object} self
+   */
+  function fields(fieldNames) {
+    if (Array.isArray(fieldNames)) {
+      fieldNames = fieldNames.join(',');
+    }
+    if ('string' !== typeof fieldNames) {
+      fieldNames = '';
+    }
+    self.req.query.fields = fieldNames;
+    return self;
+  }
   /**
     * @desc Indicates the amount of records to skip over when querying
     * @memberOf OfficeBotSDK.ApiEndpoint
@@ -128,7 +145,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     * @returns {object} self
     */
   function skip(amount) {
-    self.req.query._skip = amount;
+    self.req.query.skip = amount;
     return self;
   }
 
@@ -184,7 +201,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     var req = self.req;
     req.method = 'get';
     req.url = self.baseUrl;
-    req.query = query;
+    req.query = {
+      search : query
+    }
     if ('object' === typeof config) {
       req.config = config;
     } else {
