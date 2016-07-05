@@ -30,7 +30,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     if (data) {
       extend(true, this, data);
     }
-    
+
     /*
       If we've passed in a custom model object, let's extend our default model
       with this custom model. This gives us new methods that newly created models for
@@ -42,32 +42,32 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
 
     var rootUrl = baseRoute + endpointConfig.route;
     var _this = this;
-    transport.put(rootUrl, data)
-      .then(function(response) {
+    // transport.put(rootUrl, data)
+    //   .then(function(response) {
 
-        // var cachedModel = _instantiate(response.data);
-        response.data._temporary = true;
-        //Our API only creates an HREF after the first save, so we need to fake one
-        response.data.href = rootUrl;
+    //     // var cachedModel = _instantiate(response.data);
+    //     // response.data._temporary = true;
+    //     //Our API only creates an HREF after the first save, so we need to fake one
+    //     response.data.href = rootUrl;
 
-        extend(true, _this, response.data);
+    //     extend(true, _this, response.data);
 
-        cache.put(response.data);
+    //     // cache.put(response.data);
 
-        if ('function' === typeof onReady) {
-          return onReady(null, _this);
-        }
-      }, function(err) {
-        if ('function' === typeof onReady) {
-          return onReady(err);
-        }
-      });
+    //     if ('function' === typeof onReady) {
+    //       return onReady(null, _this);
+    //     }
+    //   }, function(err) {
+    //     if ('function' === typeof onReady) {
+    //       return onReady(err);
+    //     }
+    //   });
 
     return this;
   };
-  
-  /* 
-    Defaults for our request, in case config objects aren't passed in 
+
+  /*
+    Defaults for our request, in case config objects aren't passed in
   */
   self.req = {
     method : 'get',
@@ -77,32 +77,32 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     data : {}
   };
 
-  /* 
-    Bring in the configurations that were passed in on baseRoute and endpointConfig 
+  /*
+    Bring in the configurations that were passed in on baseRoute and endpointConfig
   */
   self.config = endpointConfig;
   self.baseUrl = baseRoute + self.config.route;
 
-  /* 
-    Instead of inlining our functions, use hoisting to make things nice and clean 
+  /*
+    Instead of inlining our functions, use hoisting to make things nice and clean
   */
   self.exec = exec;
   self.find = find;
-  self.populate = populate;
   self.skip = skip;
+  self.fields = fields;
   self.limit = limit;
   self.findById = findById;
   self.findByIdAndRemove = findByIdAndRemove;
-  self.findByIdAndUpdate = findByIdAndRemove;
+  self.findByIdAndUpdate = findByIdAndUpdate;
 
-  /* 
-    Save is bound to the prototype so we can use it when creating a new instance 
+  /*
+    Save is bound to the prototype so we can use it when creating a new instance
   */
   self.prototype.save = save;
 
-  /* 
+  /*
     If the endpointConfig has a custom methods object, extend our current methods list
-    with the methods that we've passed in. This hasn't been tested very extensively 
+    with the methods that we've passed in. This hasn't been tested very extensively
   */
   if (endpointConfig.methods) {
     endpointConfig.methods._parent = self;
@@ -118,10 +118,26 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     * @returns {object} self
     */
   function limit(amount) {
-    self.req.query._limit = amount;
+    self.req.query.limit = amount;
     return self;
   }
 
+  /**
+   * @desc This function will allow us to select specific fields that we want back from the db
+   * @memberof OfficeBotSDK.ApiEndpoint
+   * @param {string|array} fieldNames
+   * @returns {object} self
+   */
+  function fields(fieldNames) {
+    if (Array.isArray(fieldNames)) {
+      fieldNames = fieldNames.join(',');
+    }
+    if ('string' !== typeof fieldNames) {
+      fieldNames = '';
+    }
+    self.req.query.fields = fieldNames;
+    return self;
+  }
   /**
     * @desc Indicates the amount of records to skip over when querying
     * @memberOf OfficeBotSDK.ApiEndpoint
@@ -129,7 +145,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     * @returns {object} self
     */
   function skip(amount) {
-    self.req.query._skip = amount;
+    self.req.query.skip = amount;
     return self;
   }
 
@@ -147,9 +163,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     var method = 'POST'; //if new
     var targetUrl = self.baseUrl;
     if (_this.hasOwnProperty('href')) {
-      if (_this._temporary !== true) {
-        method = 'PUT';
-      }
+      // if (_this._temporary !== true) {
+      //   method = 'PUT';
+      // }
       targetUrl = _this.href;
     }
 
@@ -161,26 +177,13 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
 
         extend(true, _this, data);
 
-        cache.invalidate(data._id);
+        // cache.invalidate(data._id);
 
         //Signature is: error, *this* instance, full response body (mostly for debugging/sanity check)
         return cb(null, _this, response);
       }, function(err) {
         cb(err);
       });
-  }
-
-  /**
-    * @desc Appends a special parameter to the query to tell the server to populate any references
-    * in the model.
-    * @deprecated
-    * @memberof OfficeBotSDK.ApiEndpoint
-    * @param {object} fields
-    * @returns {object}
-    */
-  function populate(fields) {
-    self.req.query._populate = fields;
-    return self;
   }
 
   /**
@@ -198,15 +201,17 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     var req = self.req;
     req.method = 'get';
     req.url = self.baseUrl;
-    req.query = query;
+    req.query = {
+      search : query
+    }
     if ('object' === typeof config) {
       req.config = config;
     } else {
       req.config = {};
     }
-    
+
     var cb;
-    
+
     if ('function' === typeof config) {
       cb = config;
     }
@@ -242,9 +247,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     if ('object' === typeof config) {
       req.config = config;
     }
-    
+
     var cb;
-    
+
     if ('function' === typeof config) {
       cb = config;
     } else {
@@ -281,7 +286,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   }
 
   /**
-    * @desc Finds an element on the API and removes it using a unique ID. If a 
+    * @desc Finds an element on the API and removes it using a unique ID. If a
     * function is passed as the last parameter, this method will execute
     * the query and return the results using that callback function.
     * Otherwise, `this` gets returned for
@@ -295,7 +300,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     var req = self.req;
     req.method = 'delete';
     req.url = self.baseUrl + '/' + id;
-    
+
     if ('function' === typeof callback) {
       return self.exec(callback);
     }
@@ -320,7 +325,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     req.method = 'put';
     req.data = data;
     req.url = self.baseUrl + '/' + id;
-    
+
     if ('function' === typeof callback) {
       return self.exec(callback);
     }

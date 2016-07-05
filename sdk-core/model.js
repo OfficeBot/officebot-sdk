@@ -22,9 +22,6 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		*/
 	var Model = function(data) {
 		extend(true, this, data);
-		if (endpointConfig.model) {
-			extend(true, this, endpointConfig.model);
-		}
 		return this;
 	};
 
@@ -43,10 +40,10 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		var method = 'put';
 		var href = tmp.href;
 
-		if (tmp._temporary === true) {
-			method = 'POST';
-			delete tmp.href;
-		}
+		// if (tmp._temporary === true) {
+		// 	method = 'POST';
+		// 	delete tmp.href;
+		// }
 
 
 
@@ -56,8 +53,8 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	    .then(function(response) {
 	      if (response && response.data) {
 	      	extend(true, model, response.data);
-	      	model._temporary = false;
-	      	modelCache.invalidate( tmp._id );
+	      	// model._temporary = false;
+	      	// modelCache.invalidate( tmp._id );
 	      }
 	      return callback(null, response.data);
 	    }, function(err) {
