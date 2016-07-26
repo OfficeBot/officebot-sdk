@@ -176,5 +176,4 @@ someModel.remove(function(err) {
 * Fix jshint errors
 
 # License
-
 MIT
