@@ -117,7 +117,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     * @returns {object} self
     */
   function limit(amount) {
-    self.req.query._limit = amount;
+    self.req.query.limit = amount;
     return self;
   }
 
@@ -128,7 +128,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     * @returns {object} self
     */
   function skip(amount) {
-    self.req.query._skip = amount;
+    self.req.query.skip = amount;
     return self;
   }
 
