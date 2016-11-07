@@ -38,23 +38,13 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 
 		var tmp = JSON.parse( angular.toJson(model) );
 		var method = 'put';
-		var href = tmp.href;
-
-		// if (tmp._temporary === true) {
-		// 	method = 'POST';
-		// 	delete tmp.href;
-		// }
-
-
+		var href = tmp['@href'];
 
 	  transport
 		  .request(href, method, tmp, {}, {})
-	  	// .put( model.href, tmp )
 	    .then(function(response) {
 	      if (response && response.data) {
 	      	extend(true, model, response.data);
-	      	// model._temporary = false;
-	      	// modelCache.invalidate( tmp._id );
 	      }
 	      return callback(null, response.data);
 	    }, function(err) {
@@ -74,7 +64,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	  var model = this;
 
 	  return transport
-	  	.delete( model.href )
+	  	.delete( model['@href'] )
 	    .then(function(response) {
 	      return callback(null, response.data);
 	    }, function(err) {

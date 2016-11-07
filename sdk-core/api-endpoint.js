@@ -42,27 +42,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
 
     var rootUrl = baseRoute + endpointConfig.route;
     var _this = this;
-    // transport.put(rootUrl, data)
-    //   .then(function(response) {
-
-    //     // var cachedModel = _instantiate(response.data);
-    //     // response.data._temporary = true;
-    //     //Our API only creates an HREF after the first save, so we need to fake one
-    //     response.data.href = rootUrl;
-
-    //     extend(true, _this, response.data);
-
-    //     // cache.put(response.data);
-
-    //     if ('function' === typeof onReady) {
-    //       return onReady(null, _this);
-    //     }
-    //   }, function(err) {
-    //     if ('function' === typeof onReady) {
-    //       return onReady(err);
-    //     }
-    //   });
-
     return this;
   };
 
@@ -162,11 +141,11 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
       */
     var method = 'POST'; //if new
     var targetUrl = self.baseUrl;
-    if (_this.hasOwnProperty('href')) {
+    if (_this.hasOwnProperty('@href')) {
       // if (_this._temporary !== true) {
       //   method = 'PUT';
       // }
-      targetUrl = _this.href;
+      targetUrl = _this['@href'];
     }
 
     transport
