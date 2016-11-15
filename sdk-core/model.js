@@ -1,5 +1,7 @@
 var extend = require('extend');
 var angular = require('angular');
+var hash = require('object-hash');
+
 /**
 	* @name InstantiateModel
 	* @desc Returns a new instance of a Model object
@@ -22,6 +24,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		*/
 	var Model = function(data) {
 		extend(true, this, data);
+		this['@hash'] = hash(angular.toJson(this));
 		return this;
 	};
 
@@ -36,6 +39,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	  var callback = cb || angular.noop;
 	  var model = this;
 
+	  delete model['@hash'];
 		var tmp = JSON.parse( angular.toJson(model) );
 		var method = 'put';
 		var href = tmp['@href'];
@@ -45,11 +49,24 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	    .then(function(response) {
 	      if (response && response.data) {
 	      	extend(true, model, response.data);
+	      	model['@hash'] = hash(angular.toJson(model));
 	      }
 	      return callback(null, response.data);
 	    }, function(err) {
 	      return callback(err);
 	    });
+	};
+
+	/**
+		* @desc Does a simple dirty check by calculating a new hash and comparing it to
+		* the original
+		*/
+	Model.prototype.isDirty = function() {
+		var currentHash = this['@hash'];
+		var currentModel = JSON.parse( JSON.stringify(this) );
+		delete currentModel['@hash'];
+		var newHash = hash(angular.toJson(currentModel));
+		return newHash !== currentHash;
 	};
 
 	/**
