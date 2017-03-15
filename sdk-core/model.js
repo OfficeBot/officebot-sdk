@@ -90,5 +90,15 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	};
 	
 	//Finally, send the new model back
-	return new Model(data);
+	var newModel = new Model(data);
+	if ('function' === typeof endpointConfig._classDef) {
+    var modelInstance = new endpointConfig._classDef(newModel);
+    for (var i in newModel) {
+    	if ('function' === typeof newModel[i]) {
+    		modelInstance[i] = newModel[i];
+    	}
+    }
+    return modelInstance;
+	}
+	return newModel;
 };

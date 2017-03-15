@@ -36,12 +36,24 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
       with this custom model. This gives us new methods that newly created models for
       this endpoint will have
     */
-    if (endpointConfig.model) {
-      angular.extend(this, endpointConfig.model);
+    // if (endpointConfig.model) {
+    //   var instance = this;
+    //   var modelInstance = new endpointConfig.model(instance);
+    //   angular.extend(this, modelInstance);
+    // }
+    var rootUrl = baseRoute + endpointConfig.route;
+
+    if ('function' === typeof endpointConfig._classDef) {
+      var instance = this;
+      var modelInstance = new endpointConfig._classDef(instance);
+      for (var i in instance) {
+        if ('function' === typeof instance[i]) {
+          modelInstance[i] = instance[i];
+        }
+      }
+      return modelInstance;
     }
 
-    var rootUrl = baseRoute + endpointConfig.route;
-    var _this = this;
     return this;
   };
 

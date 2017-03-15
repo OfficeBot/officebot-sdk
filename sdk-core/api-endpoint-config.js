@@ -14,6 +14,7 @@ module.exports = function InstantiateApiEndpointConfig($injector) {
 	ApiEndpointConfig.prototype.route = route;
 	ApiEndpointConfig.prototype.model = model;
 	ApiEndpointConfig.prototype.methods = methods;
+	ApiEndpointConfig.prototype.classDef = classDef;
 
 	return ApiEndpointConfig;
 
@@ -36,6 +37,11 @@ module.exports = function InstantiateApiEndpointConfig($injector) {
 	function model(model) {
 	  this.model = $injector.instantiate(model);
 	  return this;
+	}
+
+	function classDef(classDefObject) {
+		this._classDef = classDefObject;
+		return this;
 	}
 
 	/**
