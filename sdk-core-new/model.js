@@ -1,6 +1,5 @@
 var extend = require('extend');
 var angular = require('angular');
-var hash = require('object-hash');
 
 /**
 	* @name InstantiateModel
@@ -24,7 +23,6 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		*/
 	var Model = function(data) {
 		extend(true, this, data);
-		this['@hash'] = hash(angular.toJson(this));
 		return this;
 	};
 
@@ -41,7 +39,6 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 
 		//Todo - build in instantiation here for our _classDef
 
-	  delete model['@hash'];
 		var tmp = JSON.parse( angular.toJson(model) );
 		var method = 'put';
 		var href = tmp['@href'];
@@ -50,7 +47,6 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		  .request(href, method, tmp, {}, {})
 	    .then(function(response) {
 	      if (response && response.data) {
-	      	model['@hash'] = hash(angular.toJson(model));
 					var newModel = instantiateModelInstance({});
 					extend(true, newModel, this);
 					return callback(null, newModel);
@@ -67,12 +63,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		* the original
 		*/
 	Model.prototype.isDirty = function() {
-		// return true;
-		var currentHash = this['@hash'];
-		var currentModel = JSON.parse( JSON.stringify(this) );
-		delete currentModel['@hash'];
-		var newHash = hash(angular.toJson(currentModel));
-		return newHash !== currentHash;
+		return true;
 	};
 
 	/**
