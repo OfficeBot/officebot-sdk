@@ -1,21 +1,37 @@
+const Model = require('./model.class.js');
+
+let privateData = new WeakMap();
+
 class ApiEndpointConfig {
 	constructor(config = {}) {
-		this.config = config;
+		let defaults = {
+			model : Model,
+			methods : function noop() {},
+			route : {}
+		};
+		Object.assign(defaults, config);
+		privateData.set(this, defaults);
 	}
 	/**
 		* @desc Overrides the methods for this endpoint
 		* @memberof OfficeBotSDK.ApiEndpointConfig
 		* @param {object} methods
 		* @returns {object} this
+		* @todo This doesn't actually do anything yet
 		*/
 	methods(methodConfig) {
 		if ('function' === typeof methodConfig) {
-		  this.config.methods = new methodConfig(); 
+		  this.config().methods = new methodConfig();
 		  return this;
 		} else {
-			return this.config.methods;
+			return this.config().methods;
 		}
 	}
+
+	config() {
+		return privateData.get(this);
+	}
+
 	/**
 		* @desc Overrides the model constructor for this endpoint
 		* @memberof OfficeBotSDK.ApiEndpointConfig
@@ -24,21 +40,13 @@ class ApiEndpointConfig {
 		*/
 	model(modelConstructor) {
 		if ('function' === typeof modelConstructor) {
-		  this.config.model = modelConstructor;
+		  this.config().model = modelConstructor;
 		  return this;
 		} else {
-			return this.config.model;
+			return this.config().model;
 		}
 	}
 
-	classDef(classDefObject) {
-		if (classDefObject) {
-			this.config.classDef = classDefObject;
-			return this;
-		} else {
-			return this.config.classDef;
-		}
-	}
 	/**
 		* @desc Points this endpoint to a given route on the server
 		* @memberof OfficeBotSDK.ApiEndpointConfig
@@ -47,10 +55,10 @@ class ApiEndpointConfig {
 		*/
 	route(routeConfig) {
 		if (routeConfig) {
-		  this.config.route = routeConfig;
+		  this.config().route = routeConfig;
 		  return this;
 		} else {
-			return this.config.route;
+			return this.config().route;
 		}
 	}
 }

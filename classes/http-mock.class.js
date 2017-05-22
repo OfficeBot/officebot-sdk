@@ -10,7 +10,7 @@ class HTTPMock {
 
 	send(body) {
 		this.log(`Sending with ${body}`);
-		if ('function' === typeof this.listeners['load']) {
+		if ('function' === typeof this.listeners.load) {
 			let mockResponse = {
 				response : {'mock_response' : true, 'data' : ['obj1']},
 				responseText : "{'mock_response' : true}",
@@ -19,7 +19,7 @@ class HTTPMock {
 				responseURL : '/mock-call'
 			};
 			Object.assign(this, mockResponse);
-			this.listeners['load']();
+			this.listeners.load();
 		}
 	}
 

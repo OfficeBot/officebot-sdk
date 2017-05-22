@@ -1,5 +1,5 @@
-let ApiEndpointConfig = require('./api-endpoint-config.js');
-// let 
+let ApiEndpointConfig = require('./api-endpoint-config.class.js');
+let EndpointConstructor = require('./api-endpoint.class.js');
 
 class Api {
 	constructor(config = {}) {
@@ -28,6 +28,17 @@ class Api {
 			return this.config.endpoints;
 		}
 	}
+
+	init() {
+		let endpoints = this.config.endpoints;
+		let apiStruct = {};
+		for (let i in endpoints) {
+			let endpointConfig = endpoints[i];
+			apiStruct[i] = EndpointConstructor( endpointConfig );
+		}
+		return apiStruct;
+	}
+
 	/**
 		* @todo - this doesn't make any sense. We are instantiating endpoints but
 		* never using them?
@@ -46,6 +57,8 @@ class Api {
       }
     }
 
-   	return apiObject; 
+   	return apiObject;
 	}
 }
+
+module.exports = Api;

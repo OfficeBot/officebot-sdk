@@ -10,6 +10,7 @@ class Transport {
 
 	setRequest(request) {
 		this.request = request;
+		return this;
 	}
 
 	exec() {
@@ -25,9 +26,9 @@ class Transport {
 			for ( let headerName in headers ) {
 				httpInstance.setRequestHeader(headerName, headers[headerName]);
 			}
-			
+
 			httpInstance.send( this.request.body() );
-			
+
 			/**
 				* Handler:Aborted
 				*/
