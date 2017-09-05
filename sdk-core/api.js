@@ -24,10 +24,17 @@ module.exports = function InstantiateApi($provide, $inject) {
   }
 
   Api.prototype.setBaseRoute = setBaseRoute;
+  Api.prototype.setChangeSocket = setChangeSocket;
   Api.prototype.endpoint = endpoint;
   Api.prototype.$get = ['$injector','transport','modelCache','$timeout', get];
 
   return Api;
+
+  function setChangeSocket(socketObject) {
+    this.changeSocket = socketObject;
+    return this;
+  }
+
   /**
     * @desc Sets the root url for this api
     * @memberof OfficeBotSDK.Api
@@ -36,6 +43,11 @@ module.exports = function InstantiateApi($provide, $inject) {
     */
   function setBaseRoute(baseUrl) {
     this.baseRoute = baseUrl;
+    return this;
+  }
+
+  function setUser(user) {
+    this.user = user;
     return this;
   }
 
@@ -66,10 +78,12 @@ module.exports = function InstantiateApi($provide, $inject) {
     var self = this;
     angular.forEach(this.endpoints, function(endpointConfig, name) {
       api[name] = $injector.instantiate(ApiEndpointConstructor, {
-        baseRoute: self.baseRoute,
+        baseRoute     : self.baseRoute,
+        changeSocket  : self.changeSocket,
         endpointConfig: endpointConfig,
-        transport : transport,
-        cache : modelCache
+        transport     : transport,
+        cache         : modelCache,
+        user          : self.user
       });
     });
 

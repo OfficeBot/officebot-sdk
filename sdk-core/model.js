@@ -11,10 +11,17 @@ var hash = require('object-hash');
 	* @returns {object} model
 	* @requires extend
 	* @requires angular
-	*/ 
-module.exports = function InstantiateModel(data, transport, baseRoute, endpointConfig, modelCache) {
+	*/
+module.exports = function InstantiateModel(data, transport, baseRoute, endpointConfig, modelCache, changeSocket) {
 	'use strict';
 	'ngInject';
+
+	function noop() {};
+
+	function isSocketObject(obj) {
+		var isValid = 'undefined' !== typeof obj && 'function' === typeof obj.on;
+		return isValid;
+	}
 
 	/**
 		* @desc This is our constructor function that gets called at the end of this file.
@@ -24,7 +31,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		*/
 	var Model = function(data) {
 		extend(true, this, data);
-		this['@hash'] = hash(angular.toJson(this));
+		// this['@hash'] = hash(angular.toJson(this));
 		return this;
 	};
 
@@ -39,7 +46,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	  var callback = cb || angular.noop;
 	  var model = this;
 
-	  delete model['@hash'];
+	  // delete model['@hash'];
 		var tmp = JSON.parse( angular.toJson(model) );
 		var method = 'put';
 		var href = tmp['@href'];
@@ -49,7 +56,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	    .then(function(response) {
 	      if (response && response.data) {
 	      	extend(true, model, response.data);
-	      	model['@hash'] = hash(angular.toJson(model));
+	      	// model['@hash'] = hash(angular.toJson(model));
 	      }
 	      return callback(null, response.data);
 	    }, function(err) {
@@ -57,16 +64,26 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	    });
 	};
 
+	Model.prototype.onRemoteChange = function onRemoteChange(callback = noop) {
+		console.log('Getting ready to watch for changes');
+		if (!this._id || !isSocketObject(changeSocket)) {
+			return;
+		}
+		let eventUrl = 'changed:' + this._id;
+		changeSocket.on(eventUrl, callback);
+	}
+
 	/**
 		* @desc Does a simple dirty check by calculating a new hash and comparing it to
 		* the original
 		*/
 	Model.prototype.isDirty = function() {
-		var currentHash = this['@hash'];
-		var currentModel = JSON.parse( JSON.stringify(this) );
-		delete currentModel['@hash'];
-		var newHash = hash(angular.toJson(currentModel));
-		return newHash !== currentHash;
+		return true;
+		// var currentHash = this['@hash'];
+		// var currentModel = JSON.parse( JSON.stringify(this) );
+		// delete currentModel['@hash'];
+		// var newHash = hash(angular.toJson(currentModel));
+		// return newHash !== currentHash;
 	};
 
 	/**
@@ -88,9 +105,10 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	      return callback(err);
 	    });
 	};
-	
+
 	//Finally, send the new model back
 	var newModel = new Model(data);
+
 	if ('function' === typeof endpointConfig._classDef) {
     var modelInstance = new endpointConfig._classDef(newModel);
     for (var i in newModel) {

@@ -15,7 +15,7 @@ var utils = require('./utils.js');
   * @requires angular
   * @requires extend
   */
-module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cache, $timeout) {
+module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cache, changeSocket, $timeout) {
   'use strict';
   'ngInject';
 
@@ -36,11 +36,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
       with this custom model. This gives us new methods that newly created models for
       this endpoint will have
     */
-    // if (endpointConfig.model) {
-    //   var instance = this;
-    //   var modelInstance = new endpointConfig.model(instance);
-    //   angular.extend(this, modelInstance);
-    // }
     var rootUrl = baseRoute + endpointConfig.route;
 
     if ('function' === typeof endpointConfig._classDef) {
@@ -79,14 +74,12 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   */
   self.exec = exec;
   self.find = find;
-  self.search = search;
   self.skip = skip;
   self.fields = fields;
   self.limit = limit;
   self.findById = findById;
   self.findByIdAndRemove = findByIdAndRemove;
   self.findByIdAndUpdate = findByIdAndUpdate;
-
 
   /*
     Save is bound to the prototype so we can use it when creating a new instance
@@ -197,38 +190,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     req.query = {
       search : query
     }
-    if ('object' === typeof config) {
-      req.config = config;
-    } else {
-      req.config = {};
-    }
-
-    var cb;
-
-    if ('function' === typeof config) {
-      cb = config;
-    }
-
-    if ('function' === typeof callback) {
-      cb = callback;
-    } else {
-      req.config = config;
-    }
-
-    if ('function' === typeof cb) {
-      return self.exec(cb);
-    }
-    return self;
-  }
-
-  function search(keyword, config, cb) {
-
-    var req = self.req;
-    req.method = 'search';
-    req.query = { search : {
-      'keyword' : keyword
-    }};
-    req.url = self.baseUrl;
     if ('object' === typeof config) {
       req.config = config;
     } else {
@@ -379,7 +340,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
         var data = response.data;
         var headers = response.headers;
         if (data) {
-          if (Array.isArray(data) ) {
+          if (data.hasOwnProperty('length')) {
             model = data.map(function(item) {
               // return instantiateModel(item, transport, baseRoute, endpointConfig);
               return _instantiate(item);
@@ -398,6 +359,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   }
 
   function _instantiate(item) {
-    return instantiateModel(item, transport, baseRoute, endpointConfig, cache);
+    return instantiateModel(item, transport, baseRoute, endpointConfig, cache, changeSocket);
   }
 };
