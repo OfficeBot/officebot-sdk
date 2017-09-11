@@ -64,13 +64,21 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	    });
 	};
 
+	Model.prototype.destroy = function() {
+		this._destroyed = true;
+		if ('string' === typeof this._eventUrl && isSocketObject(changeSocket)) {
+			console.log('cleanup');
+			changeSocket.off(this._eventUrl);
+		}
+	}
+
 	Model.prototype.onRemoteChange = function onRemoteChange(callback = noop) {
-		console.log('Getting ready to watch for changes');
-		if (!this._id || !isSocketObject(changeSocket)) {
+
+		if (!this._id || !isSocketObject(changeSocket) || this._destroyed) {
 			return;
 		}
-		let eventUrl = 'changed:' + this._id;
-		changeSocket.on(eventUrl, callback);
+		this._eventUrl = 'changed:' + this._id;
+		changeSocket.on(this._eventUrl, callback);
 	}
 
 	/**

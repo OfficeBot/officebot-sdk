@@ -231,7 +231,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     /* jshint validthis: true */
     req.url = this.baseUrl + '/' + id;
     if ('object' === typeof config) {
-      req.config = config;
+      req.query = config;
     }
 
     var cb;
@@ -239,7 +239,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     if ('function' === typeof config) {
       cb = config;
     } else {
-      req.config = config;
+      req.query = config;
     }
 
     if ('function' === typeof callback) {
