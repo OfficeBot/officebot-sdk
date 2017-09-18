@@ -54,10 +54,6 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	  transport
 		  .request(href, method, tmp, {}, {})
 	    .then(function(response) {
-	      if (response && response.data) {
-	      	extend(true, model, response.data);
-	      	// model['@hash'] = hash(angular.toJson(model));
-	      }
 	      return callback(null, response.data);
 	    }, function(err) {
 	      return callback(err);

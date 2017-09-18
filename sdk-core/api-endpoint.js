@@ -154,9 +154,10 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
       // }
       targetUrl = _this['@href'];
     }
+    let requestPayload = JSON.parse( JSON.stringify(this) );
 
     transport
-      .request(targetUrl, method, _this, {}, self.req.config)
+      .request(targetUrl, method, requestPayload, {}, self.req.config)
       .then(function(response) {
         response = response || {};
         var data = response.data;
