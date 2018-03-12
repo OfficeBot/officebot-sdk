@@ -221,7 +221,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     req.method = 'search';
     req.url = self.baseUrl;
     req.query = {
-      'search.keyword' : keyword
+      'search' : {keyword : keyword}
     }
     if ('object' === typeof config) {
       req.config = config;
