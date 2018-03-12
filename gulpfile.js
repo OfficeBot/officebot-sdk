@@ -26,9 +26,9 @@ gulp.task('browserify',function browserifyShare() {
         debug: true
     });
 
-    libs.forEach(function(lib) {
-        b.external(lib);
-    });
+    // libs.forEach(function(lib) {
+    //     b.external(lib);
+    // });
 
     if ( process.env.WATCH ) {
         b = watchify(b);
@@ -39,7 +39,7 @@ gulp.task('browserify',function browserifyShare() {
     }
     b.on('error', handleErrors);
 
-    b.add(sourceFile); // It seems to produce weird behaviors when both using "add" and "require"
+    // b.add(sourceFile); // It seems to produce weird behaviors when both using "add" and "require"
 
     return bundleShare(b);
 });
@@ -48,7 +48,7 @@ function bundleShare(b) {
     return b.bundle()
         .on('error', handleErrors)
         .pipe(source(destFile))
-        .pipe(streamify( minify({mangle : false})) )
+        // .pipe(streamify( minify({mangle : false})) )
         .pipe(gulp.dest(destFolder))
 }
 

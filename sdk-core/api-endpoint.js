@@ -77,6 +77,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   self.skip = skip;
   self.fields = fields;
   self.limit = limit;
+  self.search = search;
   self.findById = findById;
   self.findByIdAndRemove = findByIdAndRemove;
   self.findByIdAndUpdate = findByIdAndUpdate;
@@ -190,6 +191,37 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     req.url = self.baseUrl;
     req.query = {
       search : query
+    }
+    if ('object' === typeof config) {
+      req.config = config;
+    } else {
+      req.config = {};
+    }
+
+    var cb;
+
+    if ('function' === typeof config) {
+      cb = config;
+    }
+
+    if ('function' === typeof callback) {
+      cb = callback;
+    } else {
+      req.config = config;
+    }
+
+    if ('function' === typeof cb) {
+      return self.exec(cb);
+    }
+    return self;
+  }
+
+  function search(keyword, config, callback) {
+    var req = self.req;
+    req.method = 'search';
+    req.url = self.baseUrl;
+    req.query = {
+      'search.keyword' : keyword
     }
     if ('object' === typeof config) {
       req.config = config;
