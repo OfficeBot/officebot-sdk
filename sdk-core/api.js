@@ -83,7 +83,8 @@ module.exports = function InstantiateApi($provide, $inject) {
         endpointConfig: endpointConfig,
         transport     : transport,
         cache         : modelCache,
-        user          : self.user
+        user          : self.user,
+        instantiateArray : false
       });
     });
 

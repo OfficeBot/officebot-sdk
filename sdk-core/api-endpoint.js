@@ -1,5 +1,6 @@
 var angular = require('angular');
 var extend = require('extend');
+const qs = require('querystring');
 var instantiateModel = require('./model.js');
 var utils = require('./utils.js');
 
@@ -15,9 +16,12 @@ var utils = require('./utils.js');
   * @requires angular
   * @requires extend
   */
-module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cache, changeSocket, $timeout) {
+module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cache, changeSocket, $timeout, $q) {
   'use strict';
   'ngInject';
+
+  var cache = {}; //{ url : data }
+  var urls = {}; // {url : etag} - used to determine if a record is stale
 
   /*
     This might seem confusing, but what we actually doing is providing an interface
@@ -28,7 +32,8 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   */
   var self = function(data, onReady) {
     if (data) {
-      extend(true, this, data);
+      // extend(true, this, data);
+      Object.assign(this, data);
     }
 
     /*
@@ -163,8 +168,8 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
         response = response || {};
         var data = response.data;
 
-        extend(true, _this, data);
-
+        // extend(true, _this, data);
+        Object.assign(_this, data);
         // cache.invalidate(data._id);
 
         //Signature is: error, *this* instance, full response body (mostly for debugging/sanity check)
@@ -282,21 +287,21 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     // Here, we need to see if this object is already in the cache. If so,
     // fetch it and override our callback stack
 
-    var cachedModel = cache.get(id, _instantiate);
-    if (cachedModel) {
-      if ('function' === typeof cb) {
-        return cb(null, cachedModel)
-      } else {
-        return {
-          exec : function(callback) {
-            return $timeout(function() {
-              return callback(null, cachedModel);
-            },10);
-          }
-        }
-      }
+    // var cachedModel = cache.get(id, _instantiate);
+    // if (cachedModel) {
+    //   if ('function' === typeof cb) {
+    //     return cb(null, cachedModel)
+    //   } else {
+    //     return {
+    //       exec : function(callback) {
+    //         return $timeout(function() {
+    //           return callback(null, cachedModel);
+    //         },10);
+    //       }
+    //     }
+    //   }
 
-    } else if ('function' === typeof cb) {
+    if ('function' === typeof cb) {
       return self.exec(cb);
     } else {
       return self;
@@ -364,31 +369,121 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     */
   function exec(cb) {
     var req = self.req;
-    return transport
-      .request(req.url, req.method, req.data, req.query, req.config)
-      .then(function(response) {
-        //convert response to models
-        var model;
-        response = response || {};
-        var data = response.data;
-        var headers = response.headers;
-        if (data) {
-          if (data.hasOwnProperty('length')) {
-            model = data.map(function(item) {
-              // return instantiateModel(item, transport, baseRoute, endpointConfig);
-              return _instantiate(item);
-            });
-          } else {
-            model = _instantiate(data);
-            // model = instantiateModel(data, transport, baseRoute, endpointConfig);
-          }
-          data = model;
-        }
-        return cb(null, data, response, headers);
-      }, function(err) {
-        err = err || {};
-        return cb(err);
+    let fullUrl = req.url + '?' + qs.stringify(req.query);
+
+    return new $q((resolve, reject) => {
+      checkIfModified(req, fullUrl).then(cachedDocument => {
+        // console.log('done fetching from cache');
+        // console.log(cachedDocument);
+        // $timeout(() => {
+          // cb(null, cachedDocument, {}, {});
+          return resolve(cachedDocument);
+        // },0);
+      })
+      .catch(() => {
+        
+        return transport
+        .request(req.url, req.method, req.data, req.query, req.config)
+        .then(function(response) {
+            //convert response to models
+            var model;
+            response = response || {};
+            var data = response.data;
+            var headers = response.headers;
+            let etag;
+            if (headers('etag')) {
+              etag = headers('etag');
+            }
+            if (data) {
+              if (Array.isArray(data)) {
+                model = data.map(function(item) {
+                  // return instantiateModel(item, transport, baseRoute, endpointConfig);
+                  if (self.config.insantiateArray === true) {
+                    return _instantiate(item);
+                  } else {
+                    return item;
+                  }
+                });
+              } else {
+                model = _instantiate(data);
+                // model = instantiateModel(data, transport, baseRoute, endpointConfig);
+              }
+              data = model;
+              if (req.method.toLocaleLowerCase() === 'get') {
+                putInCache(etag, fullUrl, model);
+              }
+            }
+            resolve(data);
+            // return cb(null, data, response, headers);
+          }, function(err) {
+            err = err || {};
+            reject(err);
+            // return cb(err);
+          });
       });
+
+    });
+
+  }
+
+  function putInCache(etag, url, obj) {
+    // console.log(`Putting into cache [${url}] at etag: ${etag}`);
+    let currentEtag = urls[ url ];
+    if (currentEtag) {
+      // console.log('Clearing stale data out of cache');
+      delete cache[ currentEtag ];
+    }
+
+    // console.log(`${etag} : ${url}`);
+
+    cache[ etag ] = obj;
+    urls[ url ] = etag;
+    // localStorage.setItem(`cache_${etag}`, JSON.stringify(obj));
+  }
+
+  function checkIfModified(req, fullUrl) {
+    
+    return new Promise((resolve, reject) => {
+      // console.log('making call to HEAD');
+      if (req.method.toLocaleLowerCase() !== 'get') {
+        return reject(); //we only cache GET requests
+      }
+      // let fullUrl = req.url + '?' + qs.stringify(req.query);
+      transport.request(req.url, 'HEAD', {}, req.query, req.config).then(function(response) {
+        //if there is no etag then skip
+        // console.log('HEAD fetched');
+        if (!response.headers || !response.headers('etag')) {
+          // console.log(`Not in cache [${req.url}]`);
+          return reject();
+        }
+        let etag = response.headers('etag');
+        //check to see if the url in our cache 1) exists 2) contains the same etag
+        let etagInCache = urls[ fullUrl ];
+        if (!etagInCache || etag !== etagInCache) {
+          // console.dir(urls);
+          // console.log(response.config.url);
+          // console.log(response.headers('etag'));
+          // console.log(headers);
+          // console.log(`Not in cache [${fullUrl}] -- mismatched etags: ${etagInCache} -- ${etag}`);
+          return reject();
+        }
+
+        let itemInCache = cache[ etag ];
+        if (!itemInCache) {
+          // console.log(`Not in cache [${fullUrl}]`);
+          return reject();
+        }
+        try {
+          itemInCache = cache[ etag ];
+        } catch(e) {
+          // console.log(`Not in cache [${fullUrl}] -- Could not parse.`);
+          return reject();
+        }
+        // console.log(`Found in cache [${fullUrl}]!`);
+        // console.log(itemInCache);
+        return resolve(itemInCache);
+      })
+    });
   }
 
   function _instantiate(item) {

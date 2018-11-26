@@ -63,7 +63,6 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 	Model.prototype.destroy = function() {
 		this._destroyed = true;
 		if ('string' === typeof this._eventUrl && isSocketObject(changeSocket)) {
-			console.log('cleanup');
 			changeSocket.off(this._eventUrl);
 		}
 	}
