@@ -1,4 +1,3 @@
-var extend = require('extend');
 var angular = require('angular');
 var hash = require('object-hash');
 
@@ -12,9 +11,11 @@ var hash = require('object-hash');
 	* @requires extend
 	* @requires angular
 	*/
-module.exports = function InstantiateModel(data, transport, baseRoute, endpointConfig, modelCache, changeSocket) {
+module.exports = function InstantiateModel(data, transport, baseRoute, endpointConfig, changeSocket) {
 	'use strict';
 	'ngInject';
+
+	const $q = angular.injector(['ng']).get('$q');
 
 	function noop() {};
 
@@ -30,7 +31,7 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		* @returns {object}
 		*/
 	var Model = function(data) {
-		extend(true, this, data);
+		Object.assign(this, data);
 		// this['@hash'] = hash(angular.toJson(this));
 		return this;
 	};
@@ -39,25 +40,25 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		* @desc Saves the current model's representation to the API. The model MUST
 		* have a valid HREF tag or this call will fail
 		* @memberof OfficeBotSDK.Model
-		* @param {function} callback
 		* @returns {null}
 		*/
-	Model.prototype.save = function(cb) {
-	  var callback = cb || angular.noop;
-	  var model = this;
+	Model.prototype.save = function() {
+		return new $q((resolve, reject) => {
+			var model = this;
+			var tmp = JSON.parse( angular.toJson(model) );
+			var method = 'put';
+			var href = tmp['@href'];
+	
+	
+			transport
+				.request(href, method, tmp, {}, {})
+				.then(function(response) {
+					return resolve(response.data);
+				}, function(err) {
+					return reject(err);
+				});
+		});
 
-	  // delete model['@hash'];
-		var tmp = JSON.parse( angular.toJson(model) );
-		var method = 'put';
-		var href = tmp['@href'];
-
-	  transport
-		  .request(href, method, tmp, {}, {})
-	    .then(function(response) {
-	      return callback(null, response.data);
-	    }, function(err) {
-	      return callback(err);
-	    });
 	};
 
 	Model.prototype.destroy = function() {
@@ -93,20 +94,20 @@ module.exports = function InstantiateModel(data, transport, baseRoute, endpointC
 		* @desc Removes this model from the API. The model MUST
 		* have a valid HREF tag or this call will fail
 		* @memberof OfficeBotSDK.Model
-		* @param {function} callback
 		* @returns {null}
 		*/
-	Model.prototype.remove = function(cb) {
-	  var callback = cb || angular.noop;
+	Model.prototype.remove = function() {
 	  var model = this;
 
-	  return transport
-	  	.delete( model['@href'] )
-	    .then(function(response) {
-	      return callback(null, response.data);
-	    }, function(err) {
-	      return callback(err);
-	    });
+		return new $q((resolve, reject) => {
+			transport
+				.delete( model['@href'] )
+				.then(function(response) {
+					return resolve(response.data);
+				}, function(err) {
+					return reject(err);
+				});
+		});
 	};
 
 	//Finally, send the new model back

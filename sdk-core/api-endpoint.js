@@ -16,7 +16,7 @@ var utils = require('./utils.js');
   * @requires angular
   * @requires extend
   */
-module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cache, changeSocket, $timeout, $q) {
+module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, changeSocket, $timeout, $q) {
   'use strict';
   'ngInject';
 
@@ -142,8 +142,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   }
 
 
-  function save(callback) {
-    var cb = callback || angular.noop;
+  function save() {
     /* jshint validthis: true */
     var _this = this;
     //Use .request instead of .post in the super rare case we want to pass in some
@@ -162,35 +161,35 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     }
     let requestPayload = JSON.parse( JSON.stringify(this) );
 
-    transport
-      .request(targetUrl, method, requestPayload, {}, self.req.config)
-      .then(function(response) {
-        response = response || {};
-        var data = response.data;
+    return new $q((resolve, reject) => {
+      transport
+        .request(targetUrl, method, requestPayload, {}, self.req.config)
+        .then(function(response) {
+          response = response || {};
+          var data = response.data;
 
-        // extend(true, _this, data);
-        Object.assign(_this, data);
-        // cache.invalidate(data._id);
+          // extend(true, _this, data);
+          Object.assign(_this, data);
+          // cache.invalidate(data._id);
 
-        //Signature is: error, *this* instance, full response body (mostly for debugging/sanity check)
-        return cb(null, _this, response);
-      }, function(err) {
-        cb(err);
-      });
+          //Signature is: error, *this* instance, full response body (mostly for debugging/sanity check)
+          // return cb(null, _this, response);
+          return resolve(_this);
+        }, function(err) {
+          return reject(err);
+        });
+    });
   }
 
   /**
-    * @desc Sends a query to the api. If a function is passed as the last
-    * parameter, this method will execute the query and return the results
-    * using that callback function. Otherwise, `this` gets returned for
+    * @desc Sends a query to the api. `this` gets returned for
     * chaining purposes
     * @memberof OfficeBotSDK.ApiEndpoint
     * @param {object} query
     * @param {object=} config
-    * @param {function=} callback
     * @returns {object|promise}
     */
-  function find(query, config, callback) {
+  function find(query, config) {
     var req = self.req;
     req.method = 'get';
     req.url = self.baseUrl;
@@ -202,26 +201,11 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     } else {
       req.config = {};
     }
-
-    var cb;
-
-    if ('function' === typeof config) {
-      cb = config;
-    }
-
-    if ('function' === typeof callback) {
-      cb = callback;
-    } else {
-      req.config = config;
-    }
-
-    if ('function' === typeof cb) {
-      return self.exec(cb);
-    }
+    req.config = config;
     return self;
   }
 
-  function search(keyword, config, callback) {
+  function search(keyword, config) {
     var req = self.req;
     req.method = 'search';
     req.url = self.baseUrl;
@@ -233,37 +217,20 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     } else {
       req.config = {};
     }
+    req.config = config;
 
-    var cb;
-
-    if ('function' === typeof config) {
-      cb = config;
-    }
-
-    if ('function' === typeof callback) {
-      cb = callback;
-    } else {
-      req.config = config;
-    }
-
-    if ('function' === typeof cb) {
-      return self.exec(cb);
-    }
     return self;
   }
 
   /**
-    * @desc Asks the api to return one element. If a function is passed as the
-    * last parameter, this method will execute the query and return the results
-    * using that callback function. Otherwise, `this` gets returned for
+    * @desc Asks the api to return one element. `this` gets returned for
     * chaining purposes
     * @memberof OfficeBotSDK.ApiEndpoint
     * @param {string} resource id
     * @param {object=} config
-    * @param {function=} callback
-    * @returns {object|promise}
+=    * @returns {object|promise}
     */
-  function findById(id, config, callback) {
+  function findById(id, config) {
     var req = self.req;
     req.method = 'get';
     /* jshint validthis: true */
@@ -271,63 +238,21 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
     if ('object' === typeof config) {
       req.query = config;
     }
-
-    var cb;
-
-    if ('function' === typeof config) {
-      cb = config;
-    } else {
-      req.query = config;
-    }
-
-    if ('function' === typeof callback) {
-      cb = callback;
-    }
-
-    // Here, we need to see if this object is already in the cache. If so,
-    // fetch it and override our callback stack
-
-    // var cachedModel = cache.get(id, _instantiate);
-    // if (cachedModel) {
-    //   if ('function' === typeof cb) {
-    //     return cb(null, cachedModel)
-    //   } else {
-    //     return {
-    //       exec : function(callback) {
-    //         return $timeout(function() {
-    //           return callback(null, cachedModel);
-    //         },10);
-    //       }
-    //     }
-    //   }
-
-    if ('function' === typeof cb) {
-      return self.exec(cb);
-    } else {
-      return self;
-    }
-
+    req.query = config;
+    return self;
   }
 
   /**
-    * @desc Finds an element on the API and removes it using a unique ID. If a
-    * function is passed as the last parameter, this method will execute
-    * the query and return the results using that callback function.
-    * Otherwise, `this` gets returned for
+    * @desc Finds an element on the API and removes it using a unique ID. `this` gets returned for
     * chaining purposes
     * @memberof OfficeBotSDK.ApiEndpoint
     * @param {string} resource id
-    * @param {function=} callback
-    * @returns {object|promise}
+=    * @returns {object|promise}
     */
-  function findByIdAndRemove(id, callback) {
+  function findByIdAndRemove(id) {
     var req = self.req;
     req.method = 'delete';
     req.url = self.baseUrl + '/' + id;
-
-    if ('function' === typeof callback) {
-      return self.exec(callback);
-    }
 
     return self;
   }
@@ -335,24 +260,17 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   /**
     * @desc Finds a single element on the API using a unique id and REPLACES it
     * with the data you provide. This function does not provide atomic updates.
-    * If a function is passed as the callback, the query will execute and the
-    * error or result from the call will be passed back using the callback. If
-    * no function is provided, `this` will be returned for chaining purposes
+    * `this` will be returned for chaining purposes
     * @memberof OfficeBotSDK.ApiEndpoint
     * @param {string} id
     * @param {object} data
-    * @param {function=} callback
     * @returns {object|promise}
     */
-  function findByIdAndUpdate(id, data, callback) {
+  function findByIdAndUpdate(id, data) {
     var req = self.req;
     req.method = 'put';
     req.data = data;
     req.url = self.baseUrl + '/' + id;
-
-    if ('function' === typeof callback) {
-      return self.exec(callback);
-    }
 
     return self;
 
@@ -360,11 +278,10 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
 
   /**
     * @desc This method will compose the final request, send it over our transport,
-    * and return the error or results using the provided callback function.
+    * and return the error or results using promises.
     * Additionally, the response is wrapped in our custom Model objects to make
     * working with them a lot easier
     * @memberof OfficeBotSDK.ApiEndpoint
-    * @param {function} callback
     * @returns {promise}
     */
   function exec(cb) {
@@ -373,12 +290,7 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
 
     return new $q((resolve, reject) => {
       checkIfModified(req, fullUrl).then(cachedDocument => {
-        // console.log('done fetching from cache');
-        // console.log(cachedDocument);
-        // $timeout(() => {
-          // cb(null, cachedDocument, {}, {});
-          return resolve(cachedDocument);
-        // },0);
+        return resolve(cachedDocument);
       })
       .catch(() => {
         
@@ -397,7 +309,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
             if (data) {
               if (Array.isArray(data)) {
                 model = data.map(function(item) {
-                  // return instantiateModel(item, transport, baseRoute, endpointConfig);
                   if (self.config.insantiateArray === true) {
                     return _instantiate(item);
                   } else {
@@ -406,7 +317,6 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
                 });
               } else {
                 model = _instantiate(data);
-                // model = instantiateModel(data, transport, baseRoute, endpointConfig);
               }
               data = model;
               if (req.method.toLocaleLowerCase() === 'get') {
@@ -414,11 +324,9 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
               }
             }
             resolve(data);
-            // return cb(null, data, response, headers);
           }, function(err) {
             err = err || {};
             reject(err);
-            // return cb(err);
           });
       });
 
@@ -427,60 +335,41 @@ module.exports = function ApiEndpoint(baseRoute, endpointConfig, transport, cach
   }
 
   function putInCache(etag, url, obj) {
-    // console.log(`Putting into cache [${url}] at etag: ${etag}`);
     let currentEtag = urls[ url ];
     if (currentEtag) {
-      // console.log('Clearing stale data out of cache');
       delete cache[ currentEtag ];
     }
-
-    // console.log(`${etag} : ${url}`);
-
     cache[ etag ] = obj;
     urls[ url ] = etag;
-    // localStorage.setItem(`cache_${etag}`, JSON.stringify(obj));
   }
 
   function checkIfModified(req, fullUrl) {
     
     return new Promise((resolve, reject) => {
-      // console.log('making call to HEAD');
       if (req.method.toLocaleLowerCase() !== 'get') {
         return reject(); //we only cache GET requests
       }
-      // let fullUrl = req.url + '?' + qs.stringify(req.query);
       transport.request(req.url, 'HEAD', {}, req.query, req.config).then(function(response) {
         //if there is no etag then skip
-        // console.log('HEAD fetched');
         if (!response.headers || !response.headers('etag')) {
-          // console.log(`Not in cache [${req.url}]`);
           return reject();
         }
         let etag = response.headers('etag');
         //check to see if the url in our cache 1) exists 2) contains the same etag
         let etagInCache = urls[ fullUrl ];
         if (!etagInCache || etag !== etagInCache) {
-          // console.dir(urls);
-          // console.log(response.config.url);
-          // console.log(response.headers('etag'));
-          // console.log(headers);
-          // console.log(`Not in cache [${fullUrl}] -- mismatched etags: ${etagInCache} -- ${etag}`);
           return reject();
         }
 
         let itemInCache = cache[ etag ];
         if (!itemInCache) {
-          // console.log(`Not in cache [${fullUrl}]`);
           return reject();
         }
         try {
           itemInCache = cache[ etag ];
         } catch(e) {
-          // console.log(`Not in cache [${fullUrl}] -- Could not parse.`);
           return reject();
         }
-        // console.log(`Found in cache [${fullUrl}]!`);
-        // console.log(itemInCache);
         return resolve(itemInCache);
       })
     });

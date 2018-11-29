@@ -26,7 +26,7 @@ module.exports = function InstantiateApi($provide, $inject) {
   Api.prototype.setBaseRoute = setBaseRoute;
   Api.prototype.setChangeSocket = setChangeSocket;
   Api.prototype.endpoint = endpoint;
-  Api.prototype.$get = ['$injector','transport','modelCache','$timeout', get];
+  Api.prototype.$get = ['$injector','transport','$timeout', get];
 
   return Api;
 
@@ -43,11 +43,6 @@ module.exports = function InstantiateApi($provide, $inject) {
     */
   function setBaseRoute(baseUrl) {
     this.baseRoute = baseUrl;
-    return this;
-  }
-
-  function setUser(user) {
-    this.user = user;
     return this;
   }
 
@@ -69,10 +64,9 @@ module.exports = function InstantiateApi($provide, $inject) {
     * @memberof OfficeBotSDK.Api
     * @param {provider} $injector
     * @param {object} transport
-    * @param {object} modelCache
     * @returns {object} api
     */
-  function get($injector, transport, modelCache) {
+  function get($injector, transport) {
     var api = {};
 
     var self = this;
@@ -82,7 +76,6 @@ module.exports = function InstantiateApi($provide, $inject) {
         changeSocket  : self.changeSocket,
         endpointConfig: endpointConfig,
         transport     : transport,
-        cache         : modelCache,
         user          : self.user,
         instantiateArray : false
       });

@@ -10,7 +10,6 @@ var moduleName = 'sdk-core';
 angular
 	.module(moduleName, [])
 	.service('transport', require('./transport.js'))
-	.service('modelCache', require('./cache.js'))
 	.config(require('./api-provider.js'));
 
 	module.exports = moduleName;
